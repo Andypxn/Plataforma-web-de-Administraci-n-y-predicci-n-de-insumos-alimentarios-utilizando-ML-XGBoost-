@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblia Técnica de Ingeniería de Datos: Pipeline Predictivo XGBoost</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --p1-color: #2980b9;
+            --p2-color: #1a5276;
+            --p3-color: #1e8449;
+            --accent: #d35400;
+            --dark: #2c3e50;
+            --light: #f4f7f6;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #e9ecef;
+            margin: 0;
+            padding: 20px;
+        }
+        .master-container {
+            max-width: 1100px;
+            margin: auto;
+            background: var(--white);
+            padding: 60px;
+            border-radius: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        }
+        header {
+            text-align: center;
+            border-bottom: 5px solid var(--dark);
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+        }
+        h1 { color: var(--dark); font-size: 2.8em; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .meta-info { display: flex; justify-content: space-around; margin-top: 20px; font-weight: bold; color: #7f8c8d; }
+        
+        h2 { border-left: 8px solid; padding-left: 20px; margin-top: 60px; font-size: 2em; text-transform: uppercase; }
+        .h2-p1 { border-color: var(--p1-color); color: var(--p1-color); }
+        .h2-p2 { border-color: var(--p2-color); color: var(--p2-color); }
+        .h2-p3 { border-color: var(--p3-color); color: var(--p3-color); }
+
+        .phase-intro { font-size: 1.1em; color: #555; margin-bottom: 30px; }
+        
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+        .card::before {
+            content: "JUSTIFICACIÓN TÉCNICA";
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--accent);
+            color: white;
+            padding: 2px 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.4em;
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #fff5eb;
+            border-radius: 10px;
+            border: 1px dashed var(--accent);
+        }
+
+        .sql-box {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        th, td { border: 1px solid #dee2e6; padding: 15px; text-align: left; }
+        th { background-color: var(--dark); color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+
+        .mermaid { margin: 40px 0; background: white; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+
+        .impact-badge {
+            display: inline-block;
+            background: #d4efdf;
+            color: #145a32;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        footer {
+            margin-top: 80px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="master-container">
+        <header>
+            <p style="color: var(--accent); font-weight: bold; margin-bottom: 10px;">REPORTE UNIFICADO DE INGENIERÍA DE DATOS</p>
+            <h1>BIBLIA TÉCNICA: PIPELINE PREDICTIVO</h1>
+            <div class="meta-info">
+                <span>TESISTA: Andres Jimenez</span>
+                <span>FECHA EXAMEN: 12 MARZO 2026</span>
+                <span>MODELO: XGBoost v2.0</span>
+            </div>
+        </header>
+
+        <section id="vision-general">
+            <p class="phase-intro">Este documento unifica las tres fases críticas de la ingeniería de datos necesarias para transformar el caos transaccional de un POS en un motor de predicción de inventarios de alta precisión. La coherencia entre la base relacional, la agregación temporal y la extracción de señales es lo que garantiza la estabilidad del modelo.</p>
+            
+            <div class="mermaid">
+                graph TD
+                A[POS Transactions] -->|Fase 1: Consolidación| B(Esquema Relacional SQL)
+                B -->|Fase 2: Agregación| C(ABT: Analytical Base Table)
+                C -->|Fase 3: Engineering| D(Feature Store: Lags/Rolling)
+                D -->|Model Fit| E[XGBoost Predictor]
+            </div>
+        </section>
+
+        <!-- FASE 1 -->
+        <h2 class="h2-p1">Fase 1: La Capa Relacional e Integridad</h2>
+        <div class="phase-intro">El fundamento del sistema. Aquí garantizamos que los datos sean trazables, exactos y sin errores de redondeo financiero.</div>
+
+        <div class="card">
+            <h3>Consolidación mediante Joins Estratégicos</h3>
+            <p>Se implementó una vista maestra utilizando <code>INNER JOIN</code> para la intersección estricta de ventas-productos (limpieza de datos corruptos) y <code>LEFT JOIN</code> para inventarios (preservación de historia ante fallos de stock).</p>
+            <span class="impact-badge">IMPACTO: Integridad Referencial del 100% en el Vector de Entrenamiento.</span>
+        </div>
+
+        <div class="card">
+            <h3>Tipado de Datos de Grado Financiero</h3>
+            <ul>
+                <li><strong>NUMERIC(19,2):</strong> Evita el error IEEE 754 de los tipos <code>FLOAT</code>, asegurando que el modelo aprenda de costos reales.</li>
+                <li><strong>TIMESTAMPTZ:</strong> Normalización UTC obligatoria para eliminar el <em>Timezone Drift</em> en el análisis de estacionalidad.</li>
+            </ul>
+        </div>
+
+        <!-- FASE 2 -->
+        <h2 class="h2-p2">Fase 2: Agregación Temporal y Tratamiento de Sesgos</h2>
+        <div class="phase-intro">La transición de la granularidad de "tickets" a "días". Aquí es donde el modelo adquiere su capacidad de entender el tiempo.</div>
+
+        <div class="sql-box">
+-- Agregación Maestra por Día
+SELECT DATE(fecha) as fecha_id, SUM(unidades) as demanda_total 
+FROM v_consolidada GROUP BY 1;
+        </div>
+
+        <div class="card">
+            <h3>Solución al Problema del "Vaciado Temporal"</h3>
+            <p>Se aplicó una técnica de <strong>Date Spine</strong> (Espinazo de Fechas) para imputar registros de demanda cero en días sin ventas.</p>
+            <span class="impact-badge">DEFENSA: Elimina el "Sesgo Optimista" permitiendo que el modelo detecte días de inactividad.</span>
+        </div>
+
+        <div class="card">
+            <h3>Prevención de Look-Ahead Bias</h3>
+            <p>Se garantiza que las métricas de comportamiento se calculen exclusivamente con datos del pasado (T-1), asegurando que el modelo no "vea el futuro" durante el entrenamiento.</p>
+        </div>
+
+        <!-- FASE 3 -->
+        <h2 class="h2-p3">Fase 3: Feature Engineering y Extracción de Señales</h2>
+        <div class="phase-intro">La transformación final. Convertimos fechas y volúmenes en señales predictivas que XGBoost puede utilizar para ramificar sus árboles de decisión.</div>
+
+        <div class="formula">
+            <em>Feature Vector<sub>t</sub> = {Ciclicidad<sub>t</sub>, Memoria(Lag)<sub>t-1,t-7</sub>, Inercia(MA7)<sub>t</sub>}</em>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Categoría</th>
+                    <th>Feature Generada</th>
+                    <th>Justificación Técnica en XGBoost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Ciclicidad</strong></td>
+                    <td><code>dia_semana</code>, <code>es_quincena</code></td>
+                    <td>Permite particiones binarias para capturar estacionalidad local.</td>
+                </tr>
+                <tr>
+                    <td><strong>Memoria</strong></td>
+                    <td><code>Lag_1</code>, <code>Lag_7</code></td>
+                    <td>Proporciona auto-correlación (el mejor predictor es el pasado reciente).</td>
+                </tr>
+                <tr>
+                    <td><strong>Suavizado</strong></td>
+                    <td><code>Rolling_Mean_7</code></td>
+                    <td>Reduce el ruido de picos atípicos y muestra la tendencia real.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="card" style="border-color: var(--p3-color);">
+            <h3>Codificación para Árboles (Label Encoding)</h3>
+            <p>Se evitó el One-Hot Encoding masivo para prevenir la "maldición de la dimensionalidad". XGBoost maneja eficientemente las variables ordinales mediante particiones por umbrales.</p>
+        </div>
+
+        <!-- FASE 4: COMPUTACIÓN DE BAJO NIVEL -->
+        <h2 style="border-color: #7d3c98; color: #7d3c98;">Fase 4: Serialización y Eficiencia de Memoria</h2>
+        <div class="phase-intro">El paso final antes del entrenamiento. La transformación del objeto de alto nivel (Pandas DataFrame) a una estructura de bajo nivel optimizada para el hardware.</div>
+
+        <div class="card" style="border-color: #7d3c98;">
+            <h3>Transición a NumPy: Memoria Contigua de 64 bits</h3>
+            <p>Para que XGBoost pueda procesar los datos a máxima velocidad, los DataFrames de Pandas se transforman en <strong>arreglos de NumPy (ndarrays)</strong> con un diseño de memoria específico.</p>
+            <ul>
+                <li><strong>Precisión de 64 bits (float64):</strong> Se utiliza doble precisión para mantener la fidelidad de los datos financieros procesados en SQL, minimizando el error de propagación durante los cálculos de ganancia de los árboles.</li>
+                <li><strong>Memoria Contigua (C-Contiguous):</strong> El dataset se organiza en bloques de memoria físicamente adyacentes. Esto maximiza el <em>Cache Locality</em>, permitiendo que la CPU procese los datos sin saltos de memoria costosos.</li>
+            </ul>
+            <span class="impact-badge" style="background: #ebdef0; color: #7d3c98;">ARQUITECTURA: Optimización para instrucciones SIMD (Single Instruction, Multiple Data).</span>
+        </div>
+
+        <section id="conclusiones-defensa">
+            <h2 style="border-color: var(--accent); color: var(--accent);">Síntesis para la Defensa de Tesis</h2>
+            <div class="logic-box" style="border-left-color: var(--accent);">
+                <p><strong>Pregunta Clave:</strong> ¿Cómo garantiza que sus datos son aptos para XGBoost?</p>
+                <p><strong>Respuesta Maestra:</strong> Mediante un pipeline de tres capas: 
+                1) <strong>Integridad:</strong> SQL con tipos exactos y joins estables. 
+                2) <strong>Continuidad:</strong> Agregación temporal con imputación de ceros para evitar sesgos. 
+                3) <strong>Inteligencia:</strong> Descomposición en features autorregresivas (Lags) y cíclicas que maximizan la ganancia de información en cada split del árbol.</p>
+            </div>
+        </section>
+
+        <footer>
+            <p>BIBLIA TÉCNICA UNIFICADA | PROYECTO POS-FINANZAS | MARZO 2026</p>
+            <p style="font-size: 0.8em;">Este documento integra los hallazgos de las Fases 1, 2 y 3 del proceso de Ingeniería de Datos.</p>
+        </footer>
+    </div>
+</body>
+</html>

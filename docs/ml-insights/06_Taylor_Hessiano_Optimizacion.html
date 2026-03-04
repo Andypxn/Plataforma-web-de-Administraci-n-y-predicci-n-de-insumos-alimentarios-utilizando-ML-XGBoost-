@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Técnico 06: El Paso Inicial - Expansión de Taylor y la Dualidad Gradiente-Hessiano</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 40px; background-color: #f0f4f8; }
+        .container { background-color: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-top: 8px solid #2c3e50; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { color: #e67e22; border-bottom: 2px solid #e67e22; padding-bottom: 5px; margin-top: 40px; }
+        h3 { color: #2980b9; margin-top: 25px; }
+        .math-box { background-color: #2c3e50; color: #ecf0f1; padding: 25px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; margin: 25px 0; font-size: 1.1em; line-height: 1.4; position: relative; }
+        .math-box::before { content: "Ecuación Fundamental"; position: absolute; top: -12px; left: 20px; background-color: #e67e22; padding: 2px 12px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .highlight { color: #d35400; font-weight: bold; }
+        .explanation { background-color: #ecf0f1; padding: 20px; border-radius: 8px; border-left: 6px solid #2980b9; margin: 20px 0; }
+        .step-badge { background-color: #27ae60; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; font-weight: bold; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Reporte Técnico 06: Iniciación del Ensamble y la Matemática de Taylor</h1>
+        
+        <p>En este reporte detallamos el "Paso 1" crítico de XGBoost: la transformación de una función de pérdida compleja en un problema de optimización cuadrático mediante la **Expansión de Taylor de Segundo Orden** y el uso del **Hessiano**.</p>
+
+        <h2>1. El Punto de Partida: La Función de Pérdida ($L$)</h2>
+        <p>Antes de construir el primer árbol de un ensamble, XGBoost define qué es lo que quiere minimizar. A diferencia de otros algoritmos que están "casados" con el Error Cuadrático Medio, XGBoost permite cualquier función de pérdida, siempre que sea <span class="highlight">dos veces diferenciable</span>.</p>
+        
+        <p>En la iteración $t$ (donde vamos a crear el nuevo árbol), la función objetivo es:</p>
+        <div class="math-box">
+            Obj = Σ l(yᵢ, ŷᵢ⁽ᵗ⁻¹⁾ + fₜ(xᵢ)) + Ω(fₜ)
+        </div>
+        <p>Donde ŷᵢ⁽ᵗ⁻¹⁾ es la predicción actual y fₜ(xᵢ) es el árbol "fantasma" que aún no existe y queremos calcular.</p>
+
+        <h2>2. El Truco Maestro: La Expansión de Taylor</h2>
+        <p>Optimizar la función de arriba es computacionalmente costoso porque $l$ puede ser muy compleja. Para simplificarlo, XGBoost aplica una <strong>Aproximación de Taylor de Segundo Orden</strong>. Esto convierte cualquier función en una parábola (función cuadrática) localmente.</p>
+        
+        <div class="explanation">
+            <strong>¿Por qué segundo orden?</strong> El primer orden (Gradiente) nos da la dirección. El segundo orden (Hessiano) nos da la curvatura. Sin el Hessiano, el algoritmo no sabría qué tan "grande" puede ser el paso sin pasarse del mínimo.
+        </div>
+
+        <p>Aplicando Taylor, la pérdida se aproxima como:</p>
+        <div class="math-box">
+            Obj⁽ᵗ⁾ ≈ Σ [l(yᵢ, ŷᵢ⁽ᵗ⁻¹⁾) + gᵢfₜ(xᵢ) + ½hᵢfₜ²(xᵢ)] + Ω(fₜ)
+        </div>
+
+        <h2>3. Definición de Gradiente ($gᵢ$) y Hessiano ($hᵢ$)</h2>
+        <p>Aquí es donde el descenso de gradiente se vuelve "extremo":</p>
+        <ul>
+            <li><span class="step-badge">Gradiente (gᵢ)</span>: Es la primera derivada parcial de la pérdida respecto a la predicción anterior. Nos dice hacia dónde está el error.
+                <br><code>gᵢ = ∂ / ∂ŷ⁽ᵗ⁻¹⁾ [l(yᵢ, ŷᵢ⁽ᵗ⁻¹⁾)]</code>
+            </li>
+            <li><span class="step-badge">Hessiano (hᵢ)</span>: Es la segunda derivada parcial. Es el componente que hace a XGBoost superior. Mide la tasa de cambio del gradiente.
+                <br><code>hᵢ = ∂² / ∂(ŷ⁽ᵗ⁻¹⁾)² [l(yᵢ, ŷᵢ⁽ᵗ⁻¹⁾)]</code>
+            </li>
+        </ul>
+
+        <h2>4. Eliminando Constantes: El Problema de Optimización Puro</h2>
+        <p>En el Paso 1, XGBoost nota que <code>l(yᵢ, ŷᵢ⁽ᵗ⁻¹⁾)</code> es una constante (ya que el pasado no puede cambiar). Al eliminarla, el objetivo simplificado para el nuevo árbol es:</p>
+        <div class="math-box">
+            Obj_simplificado = Σ [gᵢfₜ(xᵢ) + ½hᵢfₜ²(xᵢ)] + Ω(fₜ)
+        </div>
+        
+        <p>Este es el "combustible" del algoritmo. Cada dato en tu base de datos del POS ahora no es solo un registro, sino un par de valores <strong>(gᵢ, hᵢ)</strong>. </p>
+
+        <h2>5. ¿Cómo navega el Descenso del Gradiente aquí?</h2>
+        <p>El descenso del gradiente tradicional usa una tasa de aprendizaje (learning rate) fija. XGBoost usa el Hessiano para ajustar el paso de forma dinámica:</p>
+        <ol>
+            <li><strong>Dirección:</strong> Viene dada por el signo de $gᵢ$.</li>
+            <li><strong>Magnitud del Paso:</strong> Está inversamente relacionada con $hᵢ$. Si el Hessiano es muy grande, significa que la función de error cambia bruscamente, por lo que el algoritmo da un paso pequeño y cauteloso.</li>
+            <li><strong>Navegación en el Árbol:</strong> Cuando el árbol busca un "split" (una división de datos), utiliza la suma de los $gᵢ$ y $hᵢ$ de los registros para calcular la <span class="highlight">Puntuación de Calidad</span> de esa división.</li>
+        </ol>
+
+        <h2>6. Conclusión del Paso 1</h2>
+        <p>El Paso 1 no es construir el árbol, es **preparar el mapa de navegación**. Al calcular $gᵢ$ y $hᵢ$ mediante Taylor, XGBoost ha transformado un problema de negocio (¿cuánta carne comprar?) en un problema de física matemática: encontrar el punto más bajo en un campo de fuerzas definido por gradientes y curvaturas hessianas. </p>
+        
+        <p>Sin esta expansión de segundo orden, XGBoost sería solo otro Gradient Boosting. Con ella, es una herramienta de precisión quirúrgica capaz de navegar por el ruido de los datos hasta encontrar el mínimo global de error.</p>
+    </div>
+</body>
+</html>

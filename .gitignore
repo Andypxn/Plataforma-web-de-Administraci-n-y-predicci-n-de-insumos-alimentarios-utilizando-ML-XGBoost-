@@ -1,96 +1,84 @@
-# Archivo: .gitignore
+# 🚀 SmartPOS: .gitignore Maestro
+# ------------------------------
 
-# --- Archivos sensibles ---
+# --- Archivos Sensibles y Configuración ---
 .env
 .env.*
 .env.production
+credentials.json
+secrets.xml
 
-# --- Dependencias ---
-/backend/target/
-/frontend/node_modules/
+# --- Java (Spring Boot / Maven) ---
+**/target/
+**/*.jar
+**/*.war
+**/*.ear
+**/*.class
+.mvn/wrapper/*.jar
+.mvn/
+**/mvnw
+**/mvnw.cmd
+HELP.md
 
-# --- Archivos de Sistema Operativo ---
-.DS_Store
-Thumbs.db
-
-# --- Logs ---
-*.log
-
-# --- Archivos de IDE ---
-.idea/
-.vscode/
-*.iml
-
-# Logs
-logs
-*.log
+# --- Node.js (React / Frontend) ---
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/build/
+**/coverage/
+.eslintcache
+.stylelintcache
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# --- Python (ML Service & Analysis) ---
+**/venv/
+**/.venv/
+**/env/
+**/bin/
+**/lib/
+**/include/
+**/share/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/__pycache__/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/*.pkl
+**/*.joblib
+**/*.model
+**/*.h5
+**/*.ipynb_checkpoints/
+ml-prediction-service/coverage.xml
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# --- Análisis de Tesis y Datos ---
+analisis-tesis-xgboost/data/*.csv
+analisis-tesis-xgboost/results/*.png
+analisis-tesis-xgboost/results/*.pdf
+analisis-tesis-xgboost/models/*.pkl
+reportes-predicciones/evaluacion_*
 
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# --- Docker ---
+.docker/
+**/data/pgdata/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
+# --- IDEs y Sistemas Operativos ---
+.vscode/
+.idea/
 *.iws
 *.iml
 *.ipr
+*.sln
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-# --- Testing y Cobertura ---
-# Frontend coverage
-/frontend/coverage/
-
-# Backend coverage (JaCoCo)
-/backend/target/site/jacoco/
-
-# ML Service
-/ml-prediction-service/venv/
-/ml-prediction-service/htmlcov/
-/ml-prediction-service/coverage.xml
-/ml-prediction-service/.coverage
-/ml-prediction-service/.pytest_cache/
-/ml-prediction-service/__pycache__/
+# --- Logs ---
+*.log
+logs/

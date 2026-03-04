@@ -86,11 +86,11 @@ def conectar_base_datos():
         load_dotenv()
         
         # Obtener credenciales
-        db_url = os.getenv('DB_URL')
+        db_url = os.getenv('DB_URL', '')
         db_user = os.getenv('DB_USER')
         db_pass = os.getenv('DB_PASS')
         
-        if not all([db_url, db_user, db_pass]):
+        if not db_url or not db_user or not db_pass:
             raise ValueError("Faltan variables de entorno: DB_URL, DB_USER, DB_PASS")
         
         # Parsear DB_URL (soporta formatos: postgresql://host:port/database o jdbc:postgresql://host:port/database)
@@ -126,8 +126,9 @@ def conectar_base_datos():
         # Verificar conexión
         cursor = conn.cursor()
         cursor.execute("SELECT version();")
-        version = cursor.fetchone()
-        logger.info(f"Versión PostgreSQL: {version[0]}")
+        row = cursor.fetchone()
+        version = row[0] if row else "Desconocida"
+        logger.info(f"Versión PostgreSQL: {version}")
         cursor.close()
         
         return conn
@@ -208,15 +209,15 @@ def extraer_ventas_5_dias(conn, fecha_inicio):
     logger.info("=" * 80)
     
     try:
-        # Convertir fecha_inicio a datetime si es string, o mantener si ya es date
+        # Asegurar que fecha_inicio es un objeto date/datetime válido
         if isinstance(fecha_inicio, str):
-            fecha_inicio = pd.to_datetime(fecha_inicio).date()
-        elif hasattr(fecha_inicio, 'date') and callable(fecha_inicio.date):
-            fecha_inicio = fecha_inicio.date()
+            fecha_valida = pd.to_datetime(fecha_inicio)
+        else:
+            fecha_valida = pd.to_datetime(fecha_inicio)
+            
+        fecha_fin = fecha_valida + timedelta(days=5)
         
-        fecha_fin = fecha_inicio + timedelta(days=5)
-        
-        logger.info(f"Rango de fechas: {fecha_inicio} hasta {fecha_fin}")
+        logger.info(f"Rango de fechas: {fecha_valida.date()} hasta {fecha_fin.date()}")
         
         query = """
         SELECT 
@@ -492,7 +493,7 @@ def generar_datos_sinteticos_6_meses(df_base, fecha_inicio, meses=6):
                 
                 # Añadir ruido gaussiano (15% de la desviación estándar)
                 ruido = np.random.normal(0, std_ventas * 0.15)
-                total_unidades = max(0, unidades consumidas_base + ruido)  # No puede ser negativo
+                total_ventas = max(0, ventas_base + ruido)  # No puede ser negativo
                 
                 # Calcular número de transacciones (también con ruido)
                 trans_base = num_transacciones_promedio * factor_tendencia * factor_estacional

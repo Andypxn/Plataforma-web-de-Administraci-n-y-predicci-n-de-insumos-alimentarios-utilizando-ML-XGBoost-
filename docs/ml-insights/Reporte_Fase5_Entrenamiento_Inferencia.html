@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Técnico Fase 5: Entrenamiento y Estrategia de Predicción</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary: #e67e22;
+            --secondary: #d35400;
+            --accent: #2c3e50;
+            --bg: #fdfefe;
+            --text: #1b2631;
+            --code-bg: #f4f6f7;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background-color: #fdf2e9;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        header {
+            border-bottom: 4px solid var(--primary);
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            text-align: center;
+        }
+        h1 { color: var(--primary); margin: 0; font-size: 2.2em; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { color: var(--secondary); border-left: 6px solid var(--accent); padding-left: 15px; margin-top: 45px; font-size: 1.6em; }
+        .logic-box {
+            background: var(--code-bg);
+            border-left: 4px solid var(--primary);
+            padding: 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 25px 0;
+        }
+        .theory { font-style: italic; color: #7f8c8d; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; font-size: 0.95em; }
+        .impact { font-weight: bold; color: #784212; background: #fdebd0; padding: 15px; border-radius: 6px; border-left: 4px solid var(--primary); margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; }
+        th, td { border: 1px solid #d5dbdb; padding: 12px; text-align: center; }
+        th { background-color: var(--accent); color: white; }
+        .formula { font-family: 'Times New Roman', serif; font-size: 1.3em; text-align: center; margin: 20px 0; background: #f4f6f7; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fase 5: Entrenamiento y Estrategia de Inferencia</h1>
+            <p><strong>Objetivo:</strong> Optimización del Modelo XGBoost y Definición del Horizonte de Predicción</p>
+            <p><strong>Tesis:</strong> Sistema de Abastecimiento Inteligente para Restaurantes</p>
+        </header>
+
+        <section id="data-split">
+            <h2>1. Particionamiento Estratégico (80/20)</h2>
+            <p>Para garantizar que el modelo sea capaz de generalizar (predecir el futuro) y no solo memorizar el pasado (overfitting), dividimos el dataset en dos conjuntos críticos.</p>
+            
+            <div class="mermaid">
+                graph LR
+                A[Dataset Total: 6 Meses] --> B[Entrenamiento - 80%]
+                A --> C[Pruebas/Test - 20%]
+                B --> D[El Modelo Aprende Patrones]
+                C --> E[El Modelo es Evaluado]
+            </div>
+
+            <div class="logic-box">
+                <strong>Configuración Técnica:</strong>
+                <ul>
+                    <li><strong>Set de Entrenamiento (80%):</strong> Aproximadamente 144 días. Se utiliza para ajustar los pesos de los árboles de decisión.</li>
+                    <li><strong>Set de Prueba (20%):</strong> Aproximadamente 36 días. Son datos "invisibles" para el modelo; se usan para simular la efectividad en el mundo real.</li>
+                </ul>
+                <div class="theory">
+                    <strong>Justificación:</strong> En series temporales, este split no es aleatorio (shuffle), sino cronológico. Entrenamos con los primeros meses para predecir el último mes, validando que el modelo entiende la evolución del negocio.
+                </div>
+            </div>
+        </section>
+
+        <section id="xgboost-logic">
+            <h2>2. Dinámica del Entrenamiento (Gradient Boosting)</h2>
+            <p>XGBoost no construye un modelo perfecto de golpe, sino que lo perfecciona iterativamente mediante una técnica llamada <em>Boosting</em>.</p>
+
+            <div class="formula">
+                <em>Modelo<sub>Final</sub> = Árbol<sub>1</sub> + η·Árbol<sub>2</sub> + η·Árbol<sub>3</sub> + ...</em>
+            </div>
+
+            <div class="logic-box">
+                <strong>¿Cómo aprende el modelo?</strong>
+                <ol>
+                    <li>El primer árbol hace una predicción base (promedio).</li>
+                    <li>Se calculan los <strong>Residuales</strong> (el error cometido).</li>
+                    <li>El segundo árbol se entrena específicamente para corregir los errores del primero.</li>
+                    <li>Este ciclo se repite hasta minimizar el error total (MAE/RMSE).</li>
+                </ol>
+                <div class="impact">
+                    <strong>Impacto:</strong> Esta corrección sucesiva permite que el sistema detecte patrones sutiles que otros algoritmos (como las regresiones lineales) ignorarían.
+                </div>
+            </div>
+        </section>
+
+        <section id="prediction-horizon">
+            <h2>3. El Horizonte de Predicción (Look-ahead Window)</h2>
+            <p>Un modelo de abastecimiento debe ser útil para la logística. Predecir "mañana" no es suficiente si el proveedor entrega cada semana.</p>
+
+            <div class="logic-box">
+                <strong>Configuración del Horizonte:</strong>
+                <ul>
+                    <li><strong>Horizonte de Predicción:</strong> 7 días (Plan Semanal).</li>
+                    <li><strong>Frecuencia:</strong> El modelo se ejecuta cada noche para actualizar las proyecciones de los próximos 7 días.</li>
+                </ul>
+                <div class="theory">
+                    <strong>Justificación de Negocio:</strong> El periodo de 7 días permite al restaurante realizar un pedido consolidado, optimizando costos de transporte y asegurando stock suficiente para el ciclo completo de estacionalidad (Lunes-Domingo).
+                </div>
+            </div>
+        </section>
+
+        <section id="inference-process">
+            <h2>4. Proceso de Inferencia (Predicción Real)</h2>
+            <p>Para generar la predicción de los próximos 7 días, el modelo utiliza como entrada los datos más recientes del sistema POS.</p>
+
+            <div class="mermaid">
+                sequenceDiagram
+                POS->>Feature Engineering: Envía ventas de hoy (T)
+                Feature Engineering->>XGBoost: Crea Vector con Lags (T-1, T-7)
+                XGBoost->>Dashboard: Entrega Demanda Estimada (T+1 a T+7)
+                Dashboard->>Usuario: Sugerencia de Compra de Insumos
+            </div>
+
+            <div class="impact">
+                <strong>Métrica de Éxito:</strong> Durante la validación con el 20% de los datos, comparamos la predicción con lo que realmente se vendió. Si el error (MAE) es menor al 10%, el modelo se considera apto para la operación.
+            </div>
+        </section>
+
+        <footer>
+            <hr>
+            <p style="text-align: center; font-size: 0.9em; color: #7f8c8d;">
+                Reporte de Machine Learning | Fase 5: Entrenamiento e Inferencia<br>
+                Generado para Soporte de Tesis | 25 de Febrero de 2026
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

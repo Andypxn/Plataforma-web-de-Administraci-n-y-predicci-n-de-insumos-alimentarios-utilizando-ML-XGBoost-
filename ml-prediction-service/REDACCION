@@ -1,0 +1,76 @@
+A
+
+Sin la variable categórica, el modelo trataría todos los insumos homogéneamente, generando predicciones subóptimas que no respetan las dinámicas particulares de cada familia de productos en el contexto operativo de una taquería.
+La segunda unión ha incorporado categorias_productos_id al DataFrame, pero este campo sigue siendo un identificador UUID sin valor semántico. Para que XGBoost pueda utilizar la categoría como variable predictiva, se requiere el nombre textual almacenado en la columna categoria de la tabla categorias_productos.
+Esta tercera normalización en el esquema relacional (separar categorías en tabla independiente) permite gestión centralizada del catálogo de categorías y garantiza consistencia en la nomenclatura, pero introduce una unión adicional en el proceso de consolidación analítica.
+Se ejecuta un INNER JOIN sobre categorias_productos_id entre el DataFrame actual y la tabla categorias_productos, recuperando únicamente la columna categoria. Esta operación es computacionalmente económica dado que categorias_productos es una tabla de dimensión pequeña (típicamente <20 registros), permitiendo que la base de datos la mantenga en caché de memoria durante la ejecución del query de consolidación completo.
+La consolidación de la información descriptiva del producto es insuficiente sin la dimensión financiera. En un entorno inflacionario donde los costos de insumos alimentarios (carne, verduras, maíz) fluctúan semanalmente, el precio de venta y el costo de adquisición no son constantes estáticas, sino variables temporales. El esquema relacional maneja esto mediante la tabla historial_precios, una entidad auditora que almacena la "foto" de los valores financieros vigentes en cada periodo.
+La tabla detalles_ordenes_de_ventas contiene la llave foránea historial_precios_id, pero no los valores monetarios per se. Para recuperar esta información crítica, se ejecutó la Tercera Unión INNER JOIN entre el DataFrame en proceso y la tabla historial_precios. Esta operación es fundamental para evitar "información futura" (data leakage): si el modelo entrenara con el costo actual del insumo para predecir una venta de hace seis meses, aprendería relaciones irreales que no reflejan la realidad del mercado en ese momento.
+Al integrar esta tabla, se materializan dos vectores numéricos decisivos para el modelo:
+Precio de Venta Unitario Histórico: El valor exacto que pagó el cliente en ese momento. Esto permite al algoritmo detectar la elasticidad de la demanda (cómo varía el consumo ante subidas o bajadas de precio).
+Costo de Compra Histórico: El costo de adquisición del insumo vigente en esa fecha.
+La disponibilidad simultánea del precio de venta y el costo histórico en la misma fila permite el cálculo de una característica esencial: el Margen de Utilidad Histórico Unitario (Precio - Costo). Esta variable enriquece la capacidad de decisión del sistema experto posterior, permitiendo priorizar no solo los productos más vendidos, sino los que generaban mayor rentabilidad real en cada periodo estacional. La elección de un INNER JOIN asegura la consistencia contable: cada venta registrada debe tener un respaldo de costos válido; de lo contrario, se descarta para no introducir ruido en el análisis de rentabilidad.
+Tras la ejecución secuencial de estas operaciones de unión (Ventas, Productos/Categorías e Historial Financiero), se obtuvo el objeto final de esta fase: El DataFrame Transaccional Unificado.
+Esta estructura ha transformado definitivamente la naturaleza de los datos. Lo que inicialmente eran tablas relacionales propias de una base de datos, es ahora una estructura tabular plana y densa optimizada para alimentar al algoritmo Xtreme Gradient Boosting (XGBoost).
+Cada fila de este DataFrame es una unidad de información atómica y autosuficiente, conteniendo la trazabilidad temporal (fecha exacta), la identidad semántica (categoría del producto) y la realidad financiera histórica (precio congelado y costo real de adquisición) de cada transacción.
+Sin embargo, este DataFrame transaccional presenta una limitación para la predicción de inventarios: su granularidad es excesiva. El algoritmo de predicción no requiere estimar la probabilidad de una venta individual en un minuto específico, sino proyectar la necesidad de abastecimiento para periodos operativos completos. La base de datos entrega "eventos discretos", pero el reabastecimiento requiere analizar "flujos de demanda continua". 
+CTÚA COMO: Ingeniero de Software Especialista en Datos. Tu tarea es redactar la sección "2.5.3 Ingeniería de Características (Feature Engineering)" para mi tesina.
+
+CONTEXTO DE ENTRADA (Fases Previas): El proceso inicia tras la Fase 2, donde ya contamos con un conjunto de datos agrupados temporalmente (demanda diaria/semanal por producto). Sin embargo, este set de datos es una serie de tiempo "cruda"; el algoritmo XGBoost no entiende inherentemente conceptos como "estacionalidad", "tendencia" o "ciclicidad" solo con ver una fecha y un número.
+
+OBJETIVO DE LA FASE 3: Describir cómo se enriqueció el conjunto de datos creando nuevas variables matemáticas y temporales que permitan al algoritmo detectar patrones complejos (como que los viernes se venden más tacos o que hay una tendencia de crecimiento en el último mes).
+
+ESTRUCTURA DE REDACCIÓN SOLICITADA:
+
+¿Qué es y Para qué? (Conceptualización):
+
+Define esta fase como el proceso de creación de variables sintéticas a partir de los datos existentes.
+
+Explica que su finalidad es "traducir" el comportamiento del negocio (ventas de la taquería) a un formato numérico explícito que el modelo pueda aprender.
+
+Descomposición Temporal (Calendario):
+
+Describe cómo se extrajeron atributos de la fecha (día de la semana, mes, quincena).
+
+Justificación: Explica por qué es vital diferenciar un lunes de un viernes en una taquería (comportamiento cíclico semanal).
+
+Ventanas de Tiempo y Rezagos (Lags & Rolling Windows):
+
+Sin usar código (como shift o rolling), explica la lógica de "mirar hacia atrás".
+
+Describe la creación de variables de Rezago (Lags): Usar la venta de "hace 7 días" para predecir "hoy".
+
+Describe la creación de Promedios Móviles: Calcular la media de ventas de los últimos 30 días para capturar la tendencia suave y eliminar el ruido diario.
+
+Cierre y Conexión:
+
+Concluye mencionando que el resultado es una "Matriz de Características Enriquecida" (Features Matrix) lista para ser dividida.
+
+Conecta brevemente con la siguiente etapa: Fase 4: División de Datos y Entrenamiento del Modelo.
+
+REGLAS DE BLINDAJE Y ESTILO:
+
+Tono: Ingeniero de 7mo semestre (seguro, técnico, pero sin jerga científica excesiva).
+
+Voz: Tercera persona del pasivo ("Se generaron indicadores", "Se extrajo la información").
+
+PROHIBIDO: No uses nombres de funciones (como dt.dayofweek, shift(), rolling(), lambda). No pongas bloques de código.
+
+Enfoque: Céntrate en la lógica de negocio: ¿Por qué saber que hoy es viernes ayuda a predecir cuánta carne comprar?
+
+Forma de redaccion de ejemplo: 
+Sin la variable categórica, el modelo trataría todos los insumos homogéneamente, generando predicciones subóptimas que no respetan las dinámicas particulares de cada familia de productos en el contexto operativo de una taquería.
+La segunda unión ha incorporado categorias_productos_id al DataFrame, pero este campo sigue siendo un identificador UUID sin valor semántico. Para que XGBoost pueda utilizar la categoría como variable predictiva, se requiere el nombre textual almacenado en la columna categoria de la tabla categorias_productos.
+Esta tercera normalización en el esquema relacional (separar categorías en tabla independiente) permite gestión centralizada del catálogo de categorías y garantiza consistencia en la nomenclatura, pero introduce una unión adicional en el proceso de consolidación analítica.
+Se ejecuta un INNER JOIN sobre categorias_productos_id entre el DataFrame actual y la tabla categorias_productos, recuperando únicamente la columna categoria. Esta operación es computacionalmente económica dado que categorias_productos es una tabla de dimensión pequeña (típicamente <20 registros), permitiendo que la base de datos la mantenga en caché de memoria durante la ejecución del query de consolidación completo.
+La consolidación de la información descriptiva del producto es insuficiente sin la dimensión financiera. En un entorno inflacionario donde los costos de insumos alimentarios (carne, verduras, maíz) fluctúan semanalmente, el precio de venta y el costo de adquisición no son constantes estáticas, sino variables temporales. El esquema relacional maneja esto mediante la tabla historial_precios, una entidad auditora que almacena la "foto" de los valores financieros vigentes en cada periodo.
+La tabla detalles_ordenes_de_ventas contiene la llave foránea historial_precios_id, pero no los valores monetarios per se. Para recuperar esta información crítica, se ejecutó la Tercera Unión INNER JOIN entre el DataFrame en proceso y la tabla historial_precios. Esta operación es fundamental para evitar "información futura" (data leakage): si el modelo entrenara con el costo actual del insumo para predecir una venta de hace seis meses, aprendería relaciones irreales que no reflejan la realidad del mercado en ese momento.
+Al integrar esta tabla, se materializan dos vectores numéricos decisivos para el modelo:
+Precio de Venta Unitario Histórico: El valor exacto que pagó el cliente en ese momento. Esto permite al algoritmo detectar la elasticidad de la demanda (cómo varía el consumo ante subidas o bajadas de precio).
+Costo de Compra Histórico: El costo de adquisición del insumo vigente en esa fecha.
+La disponibilidad simultánea del precio de venta y el costo histórico en la misma fila permite el cálculo de una característica esencial: el Margen de Utilidad Histórico Unitario (Precio - Costo). Esta variable enriquece la capacidad de decisión del sistema experto posterior, permitiendo priorizar no solo los productos más vendidos, sino los que generaban mayor rentabilidad real en cada periodo estacional. La elección de un INNER JOIN asegura la consistencia contable: cada venta registrada debe tener un respaldo de costos válido; de lo contrario, se descarta para no introducir ruido en el análisis de rentabilidad.
+Tras la ejecución secuencial de estas operaciones de unión (Ventas, Productos/Categorías e Historial Financiero), se obtuvo el objeto final de esta fase: El DataFrame Transaccional Unificado.
+Esta estructura ha transformado definitivamente la naturaleza de los datos. Lo que inicialmente eran tablas relacionales propias de una base de datos, es ahora una estructura tabular plana y densa optimizada para alimentar al algoritmo Xtreme Gradient Boosting (XGBoost).
+Cada fila de este DataFrame es una unidad de información atómica y autosuficiente, conteniendo la trazabilidad temporal (fecha exacta), la identidad semántica (categoría del producto) y la realidad financiera histórica (precio congelado y costo real de adquisición) de cada transacción.
+Sin embargo, este DataFrame transaccional presenta una limitación para la predicción de inventarios: su granularidad es excesiva. El algoritmo de predicción no requiere estimar la probabilidad de una venta individual en un minuto específico, sino proyectar la necesidad de abastecimiento para periodos operativos completos. La base de datos entrega "eventos discretos", pero el reabastecimiento requiere analizar "flujos de demanda continua". 
+

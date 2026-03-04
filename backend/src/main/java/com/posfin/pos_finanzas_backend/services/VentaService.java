@@ -35,9 +35,14 @@ import java.util.UUID;
  * (ordenes_workspace)
  * hacia las órdenes de venta finales y actualización de inventario.
  */
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @Transactional
 public class VentaService {
+
+    private static final Logger log = LoggerFactory.getLogger(VentaService.class);
 
     @Autowired
     private OrdenesWorkspaceRepository ordenesWorkspaceRepository;
@@ -73,6 +78,9 @@ public class VentaService {
      */
     public OrdenesDeVentasDTO procesarVentaDesdeWorkspace(String workspaceId, String clienteId,
             String usuarioId, String metodoPagoId) {
+        long startTime = System.currentTimeMillis();
+        log.info("LATENCY_TEST_START: procesarVentaDesdeWorkspace for workspaceId {}", workspaceId);
+
         // 1. Obtener todas las órdenes del workspace
         List<OrdenesWorkspace> ordenesWorkspace = ordenesWorkspaceRepository.findByWorkspaceId(workspaceId);
 
@@ -102,7 +110,10 @@ public class VentaService {
         ordenesWorkspaceRepository.deleteAll(ordenesWorkspace);
 
         // 7. Convertir a DTO y retornar
-        return convertirADTO(ordenVenta);
+        OrdenesDeVentasDTO result = convertirADTO(ordenVenta);
+        long endTime = System.currentTimeMillis();
+        log.info("LATENCY_TEST_END: procesarVentaDesdeWorkspace for workspaceId {} took {} ms", workspaceId, endTime - startTime);
+        return result;
     }
 
     /**

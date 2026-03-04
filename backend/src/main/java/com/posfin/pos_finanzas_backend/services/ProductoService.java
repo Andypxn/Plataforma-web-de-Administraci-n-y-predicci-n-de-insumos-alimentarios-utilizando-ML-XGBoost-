@@ -13,8 +13,13 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class ProductoService {
+
+    private static final Logger log = LoggerFactory.getLogger(ProductoService.class);
 
     @Autowired
     private ProductosRepository productosRepository;
@@ -51,6 +56,8 @@ public class ProductoService {
 
     @Transactional
     public ProductosDTO crearProductoCompleto(ProductoCreacionDTO dto) {
+        long startTime = System.currentTimeMillis();
+        log.info("LATENCY_TEST_START: crearProductoCompleto");
         // 1. Validar que todas las entidades relacionadas existan
         Optional<CategoriasProductos> categoria = categoriasProductosRepository
                 .findById(dto.getCategoriasProductosId());
@@ -145,7 +152,10 @@ public class ProductoService {
         movimientosInventariosRepository.save(movimientoInicial);
 
         // 7. Convertir a DTO y retornar
-        return convertToDTO(productoGuardado);
+        ProductosDTO result = convertToDTO(productoGuardado);
+        long endTime = System.currentTimeMillis();
+        log.info("LATENCY_TEST_END: crearProductoCompleto took {} ms", endTime - startTime);
+        return result;
     }
 
     @Transactional

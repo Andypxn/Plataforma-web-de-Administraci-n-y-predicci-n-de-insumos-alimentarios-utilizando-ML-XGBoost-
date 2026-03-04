@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Técnico: Fase 1 - Consolidación de Tablas SQL (Versión Senior)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px; background-color: #f0f4f8; }
+        .container { background-color: white; padding: 50px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 4px solid #3498db; padding-bottom: 15px; text-align: center; }
+        h2 { color: #2980b9; border-left: 6px solid #2980b9; padding-left: 15px; margin-top: 40px; }
+        h3 { color: #16a085; margin-top: 25px; }
+        .author-box { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; }
+        .author-box p { margin: 5px 0; }
+        .justification { background-color: #ebf5fb; border-left: 5px solid #3498db; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0; }
+        .predictive-value { background-color: #fdf2e9; border-left: 5px solid #e67e22; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0; }
+        .tech-deep-dive { background-color: #f4ecf7; border-left: 5px solid #8e44ad; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0; }
+        pre { background-color: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 0.95em; }
+        .sql-keyword { color: #c678dd; font-weight: bold; }
+        .sql-join { color: #61afef; font-weight: bold; }
+        .sql-table { color: #e06c75; }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 5px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; }
+        .badge-inner { background-color: #e74c3c; color: white; }
+        .badge-left { background-color: #3498db; color: white; }
+        .badge-tech { background-color: #8e44ad; color: white; }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #dee2e6; padding: 15px; text-align: left; }
+        th { background-color: #2c3e50; color: white; }
+        .mermaid { background: white; padding: 30px; border: 2px solid #ecf0f1; border-radius: 10px; margin: 20px 0; }
+        .viz-container { display: flex; justify-content: space-around; align-items: center; padding: 20px; background: #fafafa; border-radius: 10px; }
+        .circle { width: 140px; height: 140px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; position: relative; font-size: 0.9em; }
+        .circle-a { background-color: #e74c3c; }
+        .circle-b { background-color: #3498db; margin-left: -50px; }
+        .intersection-label { text-align: center; margin-top: 15px; font-weight: bold; color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BIBLIA DE DATOS: Fase 1 - Consolidación SQL</h1>
+            <div class="author-box">
+                <div>
+                    <p><strong>Tesista:</strong> Andres Jimenez</p>
+                    <p><strong>Misión:</strong> Reporte Técnico Nivel Senior</p>
+                </div>
+                <div style="text-align: right;">
+                    <p><strong>Fecha Examen:</strong> 12 de Marzo, 2026</p>
+                    <p><strong>Estatus:</strong> Fase 1 Concluida</p>
+                </div>
+            </div>
+        </header>
+
+        <section id="arquitectura">
+            <h2>1. Arquitectura del Modelo Relacional y Valor Predictivo</h2>
+            <p>La arquitectura no solo almacena datos, sino que actúa como el <strong>Feature Store</strong> del modelo. Cada tabla aporta una dimensión específica a la inteligencia del algoritmo XGBoost.</p>
+            
+            <div class="mermaid">
+                erDiagram
+                    ORDENES_DE_VENTAS ||--o{ DETALLES_ORDENES_DE_VENTAS : "desglose transaccional"
+                    PRODUCTOS ||--o{ DETALLES_ORDENES_DE_VENTAS : "identidad de insumo"
+                    PRODUCTOS ||--|| INVENTARIOS : "estado de capacidad"
+                    PRODUCTOS ||--o{ HISTORIAL_COSTOS : "señal de margen"
+                    DETALLES_ORDENES_DE_VENTAS }o--|| HISTORIAL_PRECIOS : "señal de demanda"
+            </div>
+
+            <h3>1.1. Valor Predictivo por Tabla (The Signal Mapping)</h3>
+            
+            <div class="predictive-value">
+                <h4>📊 Ventas (<code>ordenes_de_ventas</code>)</h4>
+                <p><strong>Señal: Estacionalidad y Tendencia Temporal.</strong> Proporciona el "cuándo". Permite al modelo detectar ciclos semanales, quincenales y festivos. Sin esta tabla, el modelo no tendría noción del tiempo, solo del volumen.</p>
+            </div>
+
+            <div class="predictive-value">
+                <h4>📦 Detalles (<code>detalles_ordenes_de_ventas</code>)</h4>
+                <p><strong>Señal: Granularidad de Demanda.</strong> Es la fuente de nuestra variable objetivo (Target). Proporciona el "cuánto" por cada item individual, permitiendo predicciones a nivel de SKU.</p>
+            </div>
+
+            <div class="predictive-value">
+                <h4>📉 Inventarios (<code>inventarios</code>)</h4>
+                <p><strong>Señal: Restricciones de Suministro.</strong> Aporta variables de control como el stock actual y límites críticos. Ayuda al modelo a entender si una baja venta fue por falta de demanda o por falta de producto (Out-of-stock signal).</p>
+            </div>
+
+            <div class="predictive-value">
+                <h4>💰 Historiales (<code>precios/costos</code>)</h4>
+                <p><strong>Señal: Elasticidad y Factibilidad.</strong> Los cambios en precios afectan la demanda (Elasticidad). Los costos afectan la prioridad de compra. Son vitales para optimizar "¿A qué precio comprar?".</p>
+            </div>
+        </section>
+
+        <section id="joins">
+            <h2>2. Proceso de Consolidación (The Joins Deep Dive)</h2>
+            <p>La consolidación es el arte de transformar un esquema normalizado en una estructura plana para Machine Learning mediante un uso riguroso de álgebra relacional.</p>
+
+            <pre>
+<span class="sql-keyword">SELECT</span> ov.fecha_orden, p.nombre, dov.cantidad_pz, i.cantidad_pz <span class="sql-keyword">as</span> stock
+<span class="sql-keyword">FROM</span> <span class="sql-table">ordenes_de_ventas</span> ov
+<span class="sql-join">INNER JOIN</span> <span class="sql-table">detalles_ordenes_de_ventas</span> dov <span class="sql-keyword">ON</span> ov.id = dov.ordenes_de_ventas_id
+<span class="sql-join">INNER JOIN</span> <span class="sql-table">productos</span> p <span class="sql-keyword">ON</span> dov.productos_id = p.id
+<span class="sql-join">LEFT JOIN</span> <span class="sql-table">inventarios</span> i <span class="sql-keyword">ON</span> p.id = i.productos_id</pre>
+
+            <div class="justification">
+                <h3><span class="badge badge-inner">INNER JOIN</span>: El Filtro de Calidad</h3>
+                <p><strong>Justificación Técnica:</strong> Se utiliza <code>INNER JOIN</code> para la relación Venta-Detalle-Producto porque requerimos una <strong>Coincidencia de Intersección Estricta</strong>. En términos de entrenamiento de modelos, un dato de venta sin detalle o sin producto es "ruido" o "dato corrupto". Al usar <code>INNER</code>, garantizamos que el dataset resultante contenga únicamente registros con integridad referencial completa.</p>
+            </div>
+
+            <div class="viz-container">
+                <div style="text-align:center;">
+                    <div style="display:flex;">
+                        <div class="circle circle-a">Ventas</div>
+                        <div class="circle circle-b" style="background-color: #8e44ad; opacity: 1;">Intersección</div>
+                        <div class="circle circle-a" style="background-color: #3498db; margin-left: -50px;">Detalles</div>
+                    </div>
+                    <p class="intersection-label">INNER JOIN: Solo registros vinculados</p>
+                </div>
+            </div>
+
+            <div class="justification">
+                <h3><span class="badge badge-left">LEFT JOIN</span>: El Seguro de Continuidad</h3>
+                <p><strong>Justificación Técnica:</strong> Se utiliza <code>LEFT JOIN</code> para conectar con Inventarios o Historiales. 
+                <strong>¿Por qué?</strong> Para evitar el borrado accidental de registros. Si un producto se vendió pero, por un error operativo, no tiene un registro de inventario, un <code>INNER JOIN</code> eliminaría la venta del histórico. El <code>LEFT JOIN</code> preserva la venta y nos permite manejar el valor nulo en la capa de limpieza, evitando sesgos de sub-representación en el modelo.</p>
+            </div>
+        </section>
+
+        <section id="tipos-datos">
+            <h2>3. Análisis de Tipos de Datos e Integridad Técnica</h2>
+            <p>La elección de tipos de datos no es estética, es una decisión de <strong>Optimización de Cómputo e Integridad Financiera</strong>.</p>
+
+            <div class="tech-deep-dive">
+                <h3><span class="badge badge-tech">TIMESTAMPTZ</span>: El Guardián del Tiempo</h3>
+                <p><strong>Análisis Técnico:</strong> PostgreSQL utiliza <code>TIMESTAMPTZ</code> para normalizar cualquier fecha ingresada al estándar <strong>UTC (Universal Time Coordinated)</strong> antes de escribirla en el disco. Esto garantiza la <strong>Inmutabilidad Temporal</strong>.</p>
+                <ul>
+                    <li><strong>ISO 8601:</strong> Se utiliza este estándar (ej. 2026-02-20T14:00:00Z) como protocolo de comunicación universal entre Java, Postgres y Python.</li>
+                    <li><strong>Manejo de Zonas Horarias:</strong> Al extraer los datos, la plataforma los proyecta a la zona horaria local, pero la base siempre es UTC. Esto elimina el <strong>Timezone Drift</strong> (desfase de horas), asegurando que el análisis de estacionalidad (ej. "Viernes noche") sea real y no un error de configuración del servidor.</li>
+                </ul>
+            </div>
+
+            <div class="tech-deep-dive">
+                <h3><span class="badge badge-tech">NUMERIC(19,2)</span>: Contra el Error IEEE 754</h3>
+                <p><strong>Análisis Técnico:</strong> A diferencia de <code>FLOAT</code> o <code>REAL</code>, que utilizan representación binaria aproximada (estándar IEEE 754), <code>NUMERIC</code> es un tipo de <strong>Punto Fijo Exacto</strong>.</p>
+                <ul>
+                    <li><strong>Rounding Errors:</strong> Los tipos <code>FLOAT</code> acumulan errores infinitesimales en sumatorias masivas (ej. 0.1 + 0.2 != 0.3). En un sistema POS de tesis, esto invalidaría la **Auditoría Financiera**.</li>
+                    <li><strong>Precisión:</strong> Usamos <code>(19,2)</code> para soportar grandes volúmenes de dinero con exactitud decimal absoluta, garantizando que el modelo ML aprenda de costos reales, no de aproximaciones.</li>
+                </ul>
+            </div>
+
+            <div class="tech-deep-dive">
+                <h3><span class="badge badge-tech">UUID / VARCHAR(36)</span>: Unicidad en la ABT</h3>
+                <p><strong>Análisis Técnico:</strong> El uso de Identificadores Únicos Universales (UUID) es superior a los enteros autoincrementales en procesos de Ingeniería de Datos.</p>
+                <ul>
+                    <li><strong>Fusión de Fuentes:</strong> Al crear la <strong>Analytical Base Table (ABT)</strong>, fusionamos datos de múltiples tablas. Los UUID garantizan que no existan colisiones de llaves primarias, asegurando que cada fila en el dataset de entrenamiento sea única y trazable hasta la transacción original.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="abt">
+            <h2>4. De SQL a la Analytical Base Table (ABT)</h2>
+            <p>La ABT es el paso final de la Fase 1. Es una **Desnormalización Agregada** que transforma el caos transaccional en un vector de características que XGBoost puede interpretar.</p>
+            <div class="justification">
+                <p><strong>¿Qué se hizo?</strong> Agregamos por <code>Día + Producto</code>.</p>
+                <p><strong>¿Por qué?</strong> XGBoost no entiende de "ventas individuales", entiende de patrones. Al aplanar los datos, creamos columnas como <code>dia_semana</code>, <code>promedio_precio</code> y <code>stock_inicial</code>, facilitando la detección de correlaciones no lineales.</p>
+            </div>
+        </section>
+
+        <section id="conclusion">
+            <h2>5. Resumen Pedagógico para Sínodos</h2>
+            <table>
+                <tr>
+                    <th>Pregunta del Sínodo</th>
+                    <th>Respuesta Técnica Maestra</th>
+                </tr>
+                <tr>
+                    <td>¿Por qué normalizar fechas?</td>
+                    <td>Para evitar el <em>Timezone Drift</em> que corrompe el análisis de estacionalidad en series de tiempo.</td>
+                </tr>
+                <tr>
+                    <td>¿Por qué usar NUMERIC en lugar de FLOAT?</td>
+                    <td>Para garantizar integridad financiera y evitar la propagación de errores de redondeo del estándar IEEE 754.</td>
+                </tr>
+                <tr>
+                    <td>¿Qué es una ABT?</td>
+                    <td>Es la <em>Analytical Base Table</em>, una vista desnormalizada que representa el vector de características (Feature Vector) para el modelo.</td>
+                </tr>
+            </table>
+        </section>
+
+        <footer>
+            <hr>
+            <p style="text-align: center; color: #7f8c8d;">© 2026 Sistema de Abastecimiento Predictivo - Documento de Tesis Confidencial</p>
+        </footer>
+    </div>
+</body>
+</html>

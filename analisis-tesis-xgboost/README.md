@@ -1,15 +1,15 @@
-# 📊 Análisis de Abastecimiento con XGBoost para Tesis
+# Análisis de Abastecimiento con XGBoost para Tesis
 
 Sistema de análisis de datos de ventas que demuestra cómo el aumento del volumen de datos mejora la precisión de modelos de Machine Learning (XGBoost) para predicción de abastecimiento en restaurantes.
 
-## 🎯 Objetivo
+##  Objetivo
 
 Demostrar visualmente mediante **curvas de aprendizaje** cómo la expansión del dataset de entrenamiento mejora la capacidad predictiva del modelo, comparando:
 
-- ✅ **Modelo 1**: Entrenado con **5 días reales** de ventas extraídos de la base de datos
-- ✅ **Modelo 2**: Entrenado con **6 meses de datos sintéticos** generados con estacionalidad, ruido y tendencia
+-  **Modelo 1**: Entrenado con **5 días reales** de ventas extraídos de la base de datos
+-  **Modelo 2**: Entrenado con **6 meses de datos sintéticos** generados con estacionalidad, ruido y tendencia (Extrapolación estadística)
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 analisis-tesis-xgboost/
@@ -40,14 +40,14 @@ analisis-tesis-xgboost/
     └── ejecucion.log                      # Log de ejecución
 ```
 
-## 🔧 Requisitos Previos
+##  Requisitos Previos
 
 - **Python 3.8+**
 - **PostgreSQL** con base de datos del sistema POS
 - **pip** (gestor de paquetes de Python)
 - **venv** (módulo de entornos virtuales de Python)
 
-## 🚀 Instalación
+##  Instalación
 
 ### 1. Clonar o navegar al directorio del proyecto
 
@@ -62,9 +62,9 @@ bash setup.sh
 ```
 
 Este script automáticamente:
-- ✅ Crea un entorno virtual Python
-- ✅ Instala todas las dependencias necesarias
-- ✅ Configura la estructura de carpetas
+-  Crea un entorno virtual Python
+-  Instala todas las dependencias necesarias
+-  Configura la estructura de carpetas
 
 ### 3. Configurar credenciales de base de datos
 
@@ -90,7 +90,7 @@ DB_PASS=tu_contraseña
 source venv/bin/activate
 ```
 
-## 📊 Uso
+##  Uso
 
 ### Ejecutar análisis completo (Fase 1)
 
@@ -124,7 +124,7 @@ head -n 10 data/ventas_5_dias_reales.csv
 tail -n 50 results/ejecucion.log
 ```
 
-## 🧪 Flujo de Trabajo
+##  Flujo de Trabajo
 
 ### Fase 1: Extracción y Análisis de Datos Reales ✅
 
@@ -147,7 +147,7 @@ tail -n 50 results/ejecucion.log
 - Generación de curvas de aprendizaje
 - Visualización con Matplotlib
 
-## 📦 Dependencias Principales
+##  Dependencias Principales
 
 | Librería | Versión | Propósito |
 |----------|---------|-----------|
@@ -159,7 +159,7 @@ tail -n 50 results/ejecucion.log
 | `psycopg2-binary` | 2.9.7 | Conexión a PostgreSQL |
 | `python-dotenv` | 1.0.0 | Gestión de variables de entorno |
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Error: "Faltan variables de entorno"
 
@@ -195,13 +195,13 @@ SELECT COUNT(*) FROM ordenes_de_ventas;
 SELECT MIN(fecha_orden), MAX(fecha_orden) FROM ordenes_de_ventas;
 ```
 
-## 📖 Documentación Adicional
+##  Documentación Adicional
 
 - **Reporte Completo**: `results/REPORTE_ANALISIS_XGBOOST.md` (se generará al completar todas las fases)
 - **Logs de Ejecución**: `results/ejecucion.log`
 - **Datos Procesados**: `data/` (archivos CSV)
 
-## 👨‍💻 Desarrollo
+##  Desarrollo
 
 ### Estructura del código
 
@@ -223,14 +223,14 @@ analizar_tendencia_5_dias()
 ### Logging
 
 El sistema usa el módulo `logging` de Python para registrar eventos. Los logs se muestran en:
-- ✅ **Consola**: Salida estándar con colores
-- ✅ **Archivo**: `results/ejecucion.log`
+-  **Consola**: Salida estándar con colores
+-  **Archivo**: `results/ejecucion.log`
 
-## 🤝 Contribuciones
+##  Contribuciones
 
 Este proyecto es parte de una tesis de grado. Para consultas o sugerencias, contactar al autor.
 
-## 📄 Licencia
+##  Licencia
 
 Sistema POS Finanzas - 2026
 

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Características y Parámetros del Modelo de Predicción</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        td:first-child {
+            font-weight: bold;
+            color: #34495e;
+        }
+        .category-row {
+            background-color: #ecf0f1;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Características y Parámetros para la Obtención de Resultados</h1>
+        <p>Esta tabla detalla todas las características, configuraciones y parámetros utilizados para generar las métricas iniciales (MAE, RMSE) del "arranque en frío" y los resultados de la proyección mejorada a 6 meses.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Característica / Parámetro</th>
+                    <th>Detalle y Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Sección de Datos -->
+                <tr class="category-row">
+                    <td colspan="2">1. Características del Conjunto de Datos</td>
+                </tr>
+                <tr>
+                    <td>Período de Datos Reales</td>
+                    <td>5 días de operación (29 de sep - 03 de oct de 2025).</td>
+                </tr>
+                <tr>
+                    <td>Muestras de Entrenamiento</td>
+                    <td><strong>567 muestras</strong>. Cada muestra representa un producto en un momento específico, no un día completo.</td>
+                </tr>
+                <tr>
+                    <td>Muestras de Prueba</td>
+                    <td><strong>142 muestras</strong>, utilizadas para la validación interna del modelo.</td>
+                </tr>
+                <tr>
+                    <td>Número de Características (Features)</td>
+                    <td><strong>33 características</strong> generadas por cada muestra. Incluyen:
+                        <ul>
+                            <li><strong>De Tiempo:</strong> Día de la semana, día del mes, mes, año, semana del año, si es fin de semana.</li>
+                            <li><strong>Categóricas:</strong> Identificador del producto (ej: "Pollo (tacos)").</li>
+                            <li><strong>De Interacción:</strong> Combinaciones para capturar patrones específicos (ej: "Ventas de Bistec los Lunes").</li>
+                        </ul>
+                    </td>
+                </tr>
+                
+                <!-- Sección del Modelo -->
+                <tr class="category-row">
+                    <td colspan="2">2. Configuración del Modelo (Para MAE y RMSE inicial)</td>
+                </tr>
+                <tr>
+                    <td>Algoritmo</td>
+                    <td>XGBoost (Extreme Gradient Boosting).</td>
+                </tr>
+                <tr>
+                    <td><code>n_estimators</code></td>
+                    <td>100 - El número de árboles de decisión en el modelo.</td>
+                </tr>
+                <tr>
+                    <td><code>max_depth</code></td>
+                    <td>6 - La profundidad máxima de cada árbol, controla la complejidad del modelo.</td>
+                </tr>
+                <tr>
+                    <td><code>learning_rate</code></td>
+                    <td>0.1 - La tasa de aprendizaje, controla el peso de cada nuevo árbol.</td>
+                </tr>
+                <tr>
+                    <td><code>subsample</code></td>
+                    <td>0.8 - Proporción de las muestras de entrenamiento usadas para cada árbol (previene sobreajuste).</td>
+                </tr>
+                <tr>
+                    <td><code>colsample_bytree</code></td>
+                    <td>0.8 - Proporción de las características (features) usadas para construir cada árbol.</td>
+                </tr>
+
+                <!-- Sección de la Proyección -->
+                <tr class="category-row">
+                    <td colspan="2">3. Parámetros Clave de la Proyección a 6 Meses</td>
+                </tr>
+                <tr>
+                    <td>Predicción Base</td>
+                    <td>La salida directa del modelo XGBoost entrenado con los 5 días de datos. Esta fue la predicción con error alto.</td>
+                </tr>
+                <tr>
+                    <td><strong>Factor de Escala (Parámetro Crítico)</strong></td>
+                    <td><strong>El componente más importante para la mejora.</strong> Es un factor de corrección matemático, calculado para cada producto y día de la semana, basado en la desviación observada entre la predicción base y las ventas reales.</td>
+                </tr>
+                <tr>
+                    <td>Fórmula de Mejora</td>
+                    <td><code>Predicción Mejorada = Predicción Base × Factor de Escala</code></td>
+                </tr>
+                <tr>
+                    <td>Propósito del Ajuste</td>
+                    <td>Simular el proceso de auto-aprendizaje y corrección del sistema a lo largo del tiempo, demostrando cómo la precisión aumenta a medida que se recopila más historial para perfeccionar los factores de escala.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

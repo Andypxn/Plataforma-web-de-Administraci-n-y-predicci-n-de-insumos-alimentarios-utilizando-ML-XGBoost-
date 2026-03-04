@@ -1,15 +1,15 @@
-# 🚀 Guía Rápida de Uso - Análisis XGBoost
+# Guía Rápida de Uso - Análisis XGBoost
 
 ## Instalación en 3 Pasos
 
-### 1️⃣ Instalar Dependencias
+### 1 Instalar Dependencias
 
 ```bash
 cd analisis-tesis-xgboost
 bash setup.sh
 ```
 
-### 2️⃣ Configurar Credenciales
+### 2 Configurar Credenciales
 
 ```bash
 cp .env.example .env
@@ -23,7 +23,7 @@ DB_USER=tu_usuario
 DB_PASS=tu_contraseña
 ```
 
-### 3️⃣ Ejecutar Fase 1
+### 3 Ejecutar Fase 1
 
 ```bash
 source venv/bin/activate
@@ -32,19 +32,19 @@ python scripts/analisis_abastecimiento_xgboost.py
 
 ---
 
-## 📊 ¿Qué hace la Fase 1?
+##  ¿Qué hace la Fase 1?
 
 La Fase 1 realiza el análisis de datos reales de tu base de datos:
 
-✅ **Paso 1**: Conecta a PostgreSQL  
-✅ **Paso 2**: Busca fechas con muchas transacciones  
-✅ **Paso 3**: Extrae datos de 5 días consecutivos  
-✅ **Paso 4**: Calcula estadísticas descriptivas  
-✅ **Paso 5**: Identifica tendencias (creciente/decreciente/estable)  
+**Paso 1**: Conecta a PostgreSQL  
+**Paso 2**: Busca fechas con muchas transacciones  
+**Paso 3**: Extrae datos de 5 días consecutivos  
+**Paso 4**: Calcula estadísticas descriptivas  
+**Paso 5**: Identifica tendencias (creciente/decreciente/estable)  
 
 ---
 
-## 📁 Archivos Generados
+## Archivos Generados
 
 Después de ejecutar la Fase 1, encontrarás:
 
@@ -56,7 +56,7 @@ Después de ejecutar la Fase 1, encontrarás:
 
 ---
 
-## 📖 Ver Resultados
+## Ver Resultados
 
 ### Ver reporte de análisis
 
@@ -78,9 +78,9 @@ tail -n 100 results/ejecucion.log
 
 ---
 
-## 🐛 Solución de Problemas
+##  Solución de Problemas
 
-### ❌ Error: "Faltan variables de entorno"
+###  Error: "Faltan variables de entorno"
 
 **Causa**: No existe el archivo `.env` o está vacío
 
@@ -92,7 +92,7 @@ nano .env  # Completa las credenciales
 
 ---
 
-### ❌ Error: "No se puede conectar a la base de datos"
+###  Error: "No se puede conectar a la base de datos"
 
 **Causa 1**: PostgreSQL no está corriendo
 
@@ -108,7 +108,7 @@ sudo systemctl status postgresql
 
 ---
 
-### ❌ Error: "ModuleNotFoundError: No module named 'pandas'"
+###  Error: "ModuleNotFoundError: No module named 'pandas'"
 
 **Causa**: No se han instalado las dependencias
 
@@ -120,7 +120,7 @@ pip install -r requirements.txt
 
 ---
 
-### ❌ Warning: "No se encontraron datos en el rango especificado"
+###  Warning: "No se encontraron datos en el rango especificado"
 
 **Causa**: La tabla `ordenes_de_ventas` está vacía o tiene pocos datos
 
@@ -132,7 +132,7 @@ SELECT MIN(fecha_orden), MAX(fecha_orden) FROM ordenes_de_ventas;
 
 ---
 
-## 🎯 Próximos Pasos
+##  Próximos Pasos
 
 Una vez completada la **Fase 1**, procederás con:
 
@@ -145,7 +145,7 @@ Una vez completada la **Fase 1**, procederás con:
 
 ---
 
-## 📞 Soporte
+##  Soporte
 
 Si encuentras problemas, revisa:
 
@@ -156,4 +156,4 @@ Si encuentras problemas, revisa:
 ---
 
 **Última actualización**: 28 Enero 2026  
-**Estado**: Fase 1 lista para usar ✅
+**Estado**: Fase 1 lista para usar 

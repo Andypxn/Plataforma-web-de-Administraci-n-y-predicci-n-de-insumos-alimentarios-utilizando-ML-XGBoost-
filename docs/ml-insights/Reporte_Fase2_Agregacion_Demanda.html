@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Técnico Fase 2: Agregación Temporal de la Demanda</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary: #1a5276;
+            --secondary: #21618c;
+            --accent: #d35400;
+            --bg: #fdfefe;
+            --text: #2c3e50;
+            --code-bg: #f4f6f7;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background-color: #f0f3f4;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 950px;
+            margin: auto;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        header {
+            border-bottom: 4px solid var(--primary);
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            text-align: center;
+        }
+        h1 { color: var(--primary); margin: 0; font-size: 2.4em; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { color: var(--secondary); border-left: 6px solid var(--accent); padding-left: 15px; margin-top: 45px; font-size: 1.8em; }
+        .logic-box {
+            background: var(--code-bg);
+            border-left: 4px solid var(--primary);
+            padding: 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 25px 0;
+        }
+        .theory { font-style: italic; color: #7f8c8d; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; font-size: 0.95em; }
+        .impact { font-weight: bold; color: #145a32; background: #d4efdf; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60; margin: 20px 0; }
+        .sql-snippet { font-family: 'Consolas', monospace; background: #2c3e50; color: #ecf0f1; padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 0.9em; line-height: 1.4; }
+        .comparison-table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        .comparison-table th, .comparison-table td { border: 1px solid #d5dbdb; padding: 15px; text-align: center; }
+        .comparison-table th { background-color: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fase 2: Agregación Temporal de la Demanda</h1>
+            <p><strong>Objetivo:</strong> Transformación de Granularidad Transaccional a Unidades de Tiempo Discretas (ABT)</p>
+            <p><strong>Tesis:</strong> Optimización de Inventarios mediante XGBoost</p>
+        </header>
+
+        <section id="granularity">
+            <h2>1. Cambio de Paradigma: Del Ticket al Día</h2>
+            <p>En la Fase 1 consolidamos las tablas SQL. Sin embargo, los modelos de predicción de inventario no operan sobre transacciones individuales (ventas aisladas), sino sobre el <strong>volumen total de demanda</strong> que el almacén debe satisfacer en un periodo determinado.</p>
+            
+            <div class="logic-box">
+                <strong>Qué se hizo:</strong> Se aplicó un proceso de <em>Temporal Resampling</em> para agrupar miles de transacciones individuales en registros diarios únicos.
+                <div class="theory">
+                    <strong>Teoría de Granularidad:</strong> La demanda agregada reduce la varianza estocástica de las transacciones individuales (ruido) y permite identificar señales estacionales claras (como el aumento de ventas los días viernes).
+                </div>
+                <div class="impact">
+                    <strong>Impacto en ML:</strong> XGBoost requiere una variable objetivo continua (Ventas_Totales_Día) para realizar una regresión supervisada eficaz.
+                </div>
+            </div>
+        </section>
+
+        <section id="aggregation-logic">
+            <h2>2. Lógica de Agregación y Reducción de Dimensionalidad</h2>
+            <p>Utilizamos funciones de agregado para colapsar la dimensión transaccional manteniendo la riqueza informativa:</p>
+            
+            <div class="sql-snippet">
+SELECT 
+    DATE(fecha_orden) AS fecha_dim, -- Reducción de granularidad
+    SUM(cantidad_unidades) AS demanda_total, -- Variable Objetivo (Target)
+    COUNT(id_orden) AS flujo_transacciones, -- Feature de intensidad
+    AVG(total_venta) AS ticket_promedio -- Feature de comportamiento
+FROM v_consolidacion_maestra
+GROUP BY DATE(fecha_orden)
+ORDER BY fecha_dim;
+            </div>
+
+            <div class="mermaid">
+                graph TD
+                T1[Venta 001: 2u] --> AGG[Agregador Temporal]
+                T2[Venta 002: 5u] --> AGG
+                T3[Venta 003: 1u] --> AGG
+                AGG --> ABT[Fila 2026-02-24: Total 8u]
+            </div>
+        </section>
+
+        <section id="abt-construction">
+            <h2>3. La Analytical Base Table (ABT)</h2>
+            <p>El resultado de esta fase es la <strong>ABT</strong>, la estructura de datos definitiva para el entrenamiento del modelo.</p>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Característica</th>
+                        <th>Nivel Transaccional (Fase 1)</th>
+                        <th>Nivel Agregado (Fase 2 - ABT)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Unidad de Observación</strong></td>
+                        <td>Una transacción de venta</td>
+                        <td>Un día calendario completo</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Utilidad</strong></td>
+                        <td>Auditoría y finanzas</td>
+                        <td>Predicción de demanda y pedidos</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ruido Estadístico</strong></td>
+                        <td>Alto (comportamiento individual)</td>
+                        <td>Bajo (tendencia colectiva)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="integrity-deep-dive">
+            <h2>4. Integridad Avanzada: Tratamiento de Vacíos y Sesgos</h2>
+            <p>Para garantizar una defensa sólida ante un tribunal técnico, se implementaron controles de rigor sobre la estructura de la ABT:</p>
+
+            <div class="logic-box">
+                <strong>A. Imputación de Demanda Cero (Zero-Inflation Handling):</strong>
+                <p>En una base de datos relacional, los días sin ventas son "invisibles". Para un modelo predictivo, la ausencia de demanda es una señal crítica.</p>
+                <ul>
+                    <li><strong>Solución:</strong> Se generó una serie cronológica completa (Date Spine) mediante un <code>LEFT JOIN</code>.</li>
+                    <li><strong>Impacto:</strong> Evita el <em>Sesgo Optimista</em> del modelo, asegurando que XGBoost aprenda a identificar días de baja actividad o cierres.</li>
+                </ul>
+            </div>
+
+            <div class="logic-box">
+                <strong>B. Prevención de Look-Ahead Bias (Sesgo de Anticipación):</strong>
+                <p>Un error común es incluir información del futuro en el vector de entrenamiento (ej. usar el ticket promedio del día T para predecir la demanda del día T).</p>
+                <ul>
+                    <li><strong>Solución:</strong> Las variables de comportamiento se calculan con un desfase (<em>Lagging</em>), utilizando únicamente información disponible al cierre del día T-1.</li>
+                </ul>
+            </div>
+
+            <div class="logic-box">
+                <strong>C. Conservación de Masa de Datos:</strong>
+                <p>Validación mediante sumatorias cruzadas:</p>
+                <div style="font-family: 'Times New Roman', serif; font-size: 1.2em; text-align: center; margin: 15px 0;">
+                    Σ Unidades<sub>Transaccionales</sub> = Σ Unidades<sub>Agregadas(ABT)</sub>
+                </div>
+                <p>Este control asegura que el proceso de agregación no incurrió en pérdida de registros ni errores de desbordamiento en tipos <code>NUMERIC</code>.</p>
+            </div>
+        </section>
+
+        <section id="justification">
+            <h2>5. Justificación Técnica para la Tesis</h2>
+            <p>La agregación temporal no es solo una simplificación; es una necesidad técnica por tres razones:</p>
+            <ol>
+                <li><strong>Alineación Operativa:</strong> Las compras a proveedores se realizan por días o semanas, no por cada venta que entra al sistema.</li>
+                <li><strong>Estabilidad del Gradiente:</strong> XGBoost converge más rápido cuando la varianza del target es representativa de un ciclo (24h).</li>
+                <li><strong>Detección de Patrones:</strong> Permite inyectar <em>Features Temporales</em> (ej. ¿Es fin de mes?) que no tendrían sentido a nivel de ticket individual.</li>
+            </ol>
+        </section>
+
+        <footer>
+            <hr>
+            <p style="text-align: center; font-size: 0.9em; color: #7f8c8d;">
+                Reporte de Ingeniería de Datos | Fase 2 | Generado para Evaluación de Tesis<br>
+                <strong>Estado:</strong> Finalizado y Validado para Entrenamiento ML
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

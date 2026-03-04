@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla Simplificada de Características del Modelo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        td:first-child {
+            font-weight: bold;
+            color: #34495e;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Factores Clave en Resultados de Predicción</h1>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Componente</th>
+                    <th>Descripción Simplificada</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Datos de Origen</td>
+                    <td>5 días de operación real de la taquería.</td>
+                </tr>
+                <tr>
+                    <td>Características del Modelo</td>
+                    <td>Se generaron <strong>33 features</strong> por cada venta, incluyendo día de la semana y tipo de producto.</td>
+                </tr>
+                <tr>
+                    <td>Modelo Utilizado</td>
+                    <td><strong>XGBoost</strong>, un algoritmo estándar de Machine Learning.</td>
+                </tr>
+                <tr>
+                    <td>Causa del Error Inicial (MAE/RMSE)</td>
+                    <td>El modelo generó una <strong>"predicción base"</strong> con error alto debido a la falta de historial (arranque en frío).</td>
+                </tr>
+                <tr>
+                    <td><strong>Clave de la Mejora (Proyección)</strong></td>
+                    <td>Se aplicó un <strong>"Factor de Escala"</strong> (corrector matemático) para ajustar la predicción base.</td>
+                </tr>
+                 <tr>
+                    <td>Resultado Final</td>
+                    <td>La predicción mejorada (<code>Predicción Base × Factor de Escala</code>) logró una precisión <strong>6 veces mayor</strong>, reduciendo el error drásticamente.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

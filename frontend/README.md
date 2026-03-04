@@ -1,54 +1,34 @@
-# React + TypeScript + Vite
+# Interfaz Web para Predicción de Inventarios / Plataforma web POS con predicción]
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+En este repositorio presentamos el código fuente y la arquitectura del lado del cliente (frontend). Desarrollamos esta interfaz con el objetivo de ofrecer una experiencia de usuario fluida, conectando eficientemente con los servicios de backend y garantizando una alta escalabilidad.
 
-Currently, two official plugins are available:
+## Características Principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* **Integración de Sistemas Complejos:** Diseñamos componentes específicos para consumir y visualizar datos dinámicos de manera intuitiva (por ejemplo, tableros de gestión estudiantil o visualización de predicciones de inventario generadas por algoritmos como XGBoost).
+* **Gestión de Estado Eficiente:** Implementamos soluciones para manejar el flujo de datos y la sincronización con la API sin comprometer el rendimiento de la aplicación.
+* **Diseño Responsivo y Accesible:** Aseguramos que la plataforma sea completamente funcional en múltiples resoluciones y dispositivos, priorizando la usabilidad.
 
-## Expanding the ESLint configuration
+## Tecnologías y Herramientas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Seleccionamos un stack moderno y estrictamente tipado para garantizar el mantenimiento a largo plazo y la reducción de errores en tiempo de ejecución:
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+* **Núcleo:** React
+* **Lenguaje:** TypeScript
+* **Empaquetador y Entorno:** Vite
+* **Estilos:** [Ej. Tailwind CSS / Styled Components / CSS Modules]
+* **Integración:** Preparado para integrarse en arquitecturas basadas en contenedores (Docker) junto con los microservicios del backend.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Arquitectura y Estructura del Proyecto
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Adoptamos una arquitectura basada en la separación de responsabilidades y la reutilización de componentes. Organizamos la estructura principal de directorios de la siguiente manera para mantener el código limpio y escalable:
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+```text
+src/
+├── assets/        # Recursos estáticos (imágenes, íconos)
+├── components/    # Componentes UI reutilizables (Botones, Tarjetas, Modales)
+├── features/      # Módulos específicos por dominio (Ej. Dashboard, Punto de Venta)
+├── hooks/         # Custom hooks para lógica compartida
+├── services/      # Configuración de clientes HTTP y llamadas a la API
+├── store/         # Configuración del estado global
+├── types/         # Definiciones de interfaces y tipos de TypeScript genéricos
+└── utils/         # Funciones auxiliares y formateadores

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Técnico: Feature Engineering para Modelos de Demanda</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary: #1e8449;
+            --secondary: #28b463;
+            --accent: #d35400;
+            --bg: #fdfefe;
+            --text: #1b2631;
+            --code-bg: #f4f6f7;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background-color: #f7f9f9;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        header {
+            border-bottom: 4px solid var(--primary);
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            text-align: center;
+        }
+        h1 { color: var(--primary); margin: 0; font-size: 2.2em; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { color: var(--secondary); border-left: 6px solid var(--accent); padding-left: 15px; margin-top: 45px; font-size: 1.6em; }
+        .logic-box {
+            background: var(--code-bg);
+            border-left: 4px solid var(--primary);
+            padding: 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 25px 0;
+        }
+        .theory { font-style: italic; color: #7f8c8d; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; font-size: 0.95em; }
+        .impact { font-weight: bold; color: #145a32; background: #d4efdf; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60; margin: 20px 0; }
+        .feature-tag { display: inline-block; background: #eaf2f8; color: #2980b9; padding: 2px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold; margin: 2px; border: 1px solid #aed6f1; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; }
+        th, td { border: 1px solid #d5dbdb; padding: 12px; text-align: left; }
+        th { background-color: var(--primary); color: white; }
+        .formula { font-family: 'Times New Roman', serif; font-size: 1.2em; text-align: center; margin: 20px 0; background: #fdf2e9; padding: 15px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fase 3: Feature Engineering</h1>
+            <p><strong>Objetivo:</strong> Construcción del Vector de Entrenamiento y Extracción de Señales Predictivas</p>
+            <p><strong>Tesis:</strong> Optimización de Abastecimiento Gastronómico con XGBoost</p>
+        </header>
+
+        <section id="temporal-decomposition">
+            <h2>1. Descomposición Cíclica del Tiempo</h2>
+            <p>XGBoost, al ser un algoritmo basado en árboles, no detecta la continuidad del tiempo de forma nativa. Por ello, es imperativo transformar la variable <code>fecha</code> en componentes vectoriales discretos.</p>
+            
+            <div class="logic-box">
+                <strong>Qué se hizo:</strong> Se descompuso el timestamp en features categóricas y numéricas:
+                <br>
+                <span class="feature-tag">dia_semana</span> <span class="feature-tag">dia_mes</span> <span class="feature-tag">mes</span> <span class="feature-tag">es_fin_de_semana</span> <span class="feature-tag">quincena</span>
+                <div class="theory">
+                    <strong>Justificación Teórica:</strong> La demanda en restaurantes es altamente estacional. El uso de variables cíclicas permite al modelo realizar particiones (splits) de información como: <em>"Si es sábado Y es quincena, entonces la demanda aumenta un 40%"</em>.
+                </div>
+                <div class="impact">
+                    <strong>Impacto:</strong> Captura la estacionalidad semanal y mensual sin necesidad de transformar las variables en ondas senoidales complejas, facilitando la interpretación de los árboles.
+                </div>
+            </div>
+        </section>
+
+        <section id="lagging-features">
+            <h2>2. Lógica de Retrasos (Lagging Features)</h2>
+            <p>En series temporales, el pasado inmediato suele ser el predictor más potente del futuro. Introducimos la dimensión de "memoria" al modelo.</p>
+            
+            <div class="formula">
+                <em>X<sub>t</sub> = f(X<sub>t-1</sub>, X<sub>t-7</sub>, X<sub>t-14</sub>)</em>
+            </div>
+
+            <div class="logic-box">
+                <strong>Implementación de Lags:</strong>
+                <ul>
+                    <li><strong>Lag 1 (T-1):</strong> Demanda del día anterior (Captura inercia diaria).</li>
+                    <li><strong>Lag 7 (T-7):</strong> Demanda del mismo día de la semana anterior (Captura ciclicidad semanal).</li>
+                </ul>
+                <div class="theory">
+                    <strong>Teoría:</strong> La auto-correlación es la base de los modelos autorregresivos. Al inyectar estos lags, permitimos que XGBoost funcione como un modelo AR dinámico.
+                </div>
+                <div class="impact">
+                    <strong>Impacto:</strong> Reduce el error cuadrático medio al proporcionar un "ancla" de realidad histórica reciente al modelo.
+                </div>
+            </div>
+        </section>
+
+        <section id="rolling-stats">
+            <h2>3. Ventanas Móviles (Rolling Statistics)</h2>
+            <p>Para suavizar el ruido de eventos atípicos (un evento corporativo masivo un martes, por ejemplo), se utilizan estadísticas de ventana móvil.</p>
+
+            <div class="logic-box">
+                <strong>Características Generadas:</strong>
+                <ul>
+                    <li><strong>Rolling Mean (MA7):</strong> Promedio de demanda de los últimos 7 días.</li>
+                    <li><strong>Rolling Std:</strong> Desviación estándar móvil (Mide la volatilidad reciente de la demanda).</li>
+                </ul>
+                <div class="theory">
+                    <strong>Justificación:</strong> Estas variables representan la "tendencia suavizada" del negocio, permitiendo distinguir entre un crecimiento sostenido y un pico aislado.
+                </div>
+            </div>
+
+            <div class="mermaid">
+                graph LR
+                A[Demanda Cruda] --> B(Ventana 7 días)
+                B --> C[Promedio Móvil]
+                B --> D[Varianza Móvil]
+                C & D --> E[Vector Predictor]
+            </div>
+        </section>
+
+        <section id="encoding">
+            <h2>4. Codificación y Preparación para el Fit</h2>
+            <p>A diferencia de los modelos lineales, los árboles de decisión no requieren escalamiento estricto ni One-Hot Encoding masivo para variables ordinales.</p>
+
+            <div class="logic-box">
+                <strong>Decisión Técnica:</strong> Se utilizó <strong>Integer/Label Encoding</strong> para variables como <code>dia_semana</code> (0-6).
+                <div class="theory">
+                    <strong>Por qué:</strong> XGBoost puede encontrar umbrales de partición óptimos (ej. <code>dia_semana > 4</code> para aislar el fin de semana) sin aumentar la dimensionalidad del dataset, evitando la "maldición de la dimensionalidad".
+                </div>
+            </div>
+        </section>
+
+        <section id="pipeline-visual">
+            <h2>5. Pipeline de Transformación Final</h2>
+            <div class="mermaid">
+                stateDiagram-v2
+                [*] --> ABT_Fase2
+                ABT_Fase2 --> Descomposicion_Temporal
+                Descomposicion_Temporal --> Generacion_Lags
+                Generacion_Lags --> Calculo_Rolling_Stats
+                Calculo_Rolling_Stats --> Feature_Store_Final
+                Feature_Store_Final --> Fit_XGBoost
+            </div>
+        </section>
+
+        <footer>
+            <hr>
+            <p style="text-align: center; font-size: 0.9em; color: #7f8c8d;">
+                Reporte de Ingeniería de Datos | Fase 3: Feature Engineering<br>
+                Generado para Soporte de Tesis de Grado | 25 de Febrero de 2026
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
