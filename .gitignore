@@ -3,8 +3,8 @@
 
 # --- Archivos Sensibles y Configuración ---
 .env
-.env.*
 .env.production
+!.env.example
 credentials.json
 secrets.xml
 
