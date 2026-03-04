@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { OrdenVentaReciente } from '../types/ordenes';
+import type { OrdenVentaReciente } from '@/types/ordenes';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8084';
 

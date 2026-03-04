@@ -6,7 +6,7 @@ import type {
   DeudaProveedor,
   ProductoCompra,
   OrdenCompra
-} from '../types/index';
+} from '@/types/index';
 
 // Obtener la URL del backend dinámicamente en el cliente
 const getBackendUrl = () => {
@@ -203,7 +203,7 @@ export const comprasService = {
     }
 
     // Validar cada producto en la lista
-    compra.productos?.forEach((producto, index) => {
+    compra.productos?.forEach((producto: any, index: number) => {
       if (!producto.productoId) {
         errores.push(`Producto ${index + 1}: ID de producto requerido`);
       }
